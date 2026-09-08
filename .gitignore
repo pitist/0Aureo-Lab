@@ -1,0 +1,20 @@
+# Lean / Lake
+.lake/
+*.olean
+*.ilean
+*.ilean.private
+*.trace
+
+# Python
+__pycache__/
+*.pyc
+
+# Entornos
+.venv/
+venv/
+
+# Logs temporales
+*.log
+
+# Sistema
+.DS_Store

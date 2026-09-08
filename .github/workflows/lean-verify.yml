@@ -1,0 +1,134 @@
+name: "0Aureo • Lean + Mathlib Verification"
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: "Kernel Verification"
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: "Checkout 0Aureo"
+        uses: actions/checkout@v5
+
+      - name: "Install Elan"
+        shell: bash
+        run: |
+          set -e
+
+          curl -sSf https://elan.lean-lang.org/elan-init.sh \
+            | sh -s -- --default-toolchain none -y
+
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+
+      - name: "Install Lean toolchain"
+        shell: bash
+        run: |
+          set -e
+
+          TOOLCHAIN="$(cat lean-toolchain)"
+
+          echo "Toolchain: $TOOLCHAIN"
+
+          elan toolchain install "$TOOLCHAIN"
+          elan default "$TOOLCHAIN"
+
+          lean --version
+          lake --version
+
+      - name: "Generate Lake manifest"
+        shell: bash
+        run: |
+          set -e
+
+          lake update
+
+          test -f lake-manifest.json
+
+          echo "lake-manifest.json: OK"
+
+      - name: "Setup Mathlib cache"
+        uses: texra-ai/lean-env-action@main
+        with:
+          use-github-cache: true
+
+      - name: "Build 0Aureo"
+        shell: bash
+        run: |
+          set -e
+
+          echo "========================================"
+          echo "        0AUREO LEAN BUILD"
+          echo "========================================"
+
+          lake build
+
+          echo ""
+          echo "BUILD: PASS"
+
+      - name: "Audit sorry"
+        shell: bash
+        run: |
+          set -e
+
+          COUNT="$(
+            grep -RhoE '(^|[[:space:]])sorry([[:space:]]|$)' \
+              --include='*.lean' \
+              --exclude-dir='.lake' \
+              . 2>/dev/null |
+              wc -l
+          )"
+
+          echo "SORRY: $COUNT"
+
+          if [ "$COUNT" -ne 0 ]; then
+            echo "ERROR: existen proofs con sorry."
+            exit 1
+          fi
+
+          echo "SORRY CHECK: PASS"
+
+      - name: "Audit axioms"
+        shell: bash
+        run: |
+          set -e
+
+          COUNT="$(
+            grep -RhnE '^[[:space:]]*axiom[[:space:]]' \
+              --include='*.lean' \
+              --exclude-dir='.lake' \
+              . 2>/dev/null |
+              wc -l
+          )"
+
+          echo "AXIOMS: $COUNT"
+
+      - name: "Verification Summary"
+        if: always()
+        shell: bash
+        run: |
+          echo ""
+          echo "========================================"
+          echo "       0AUREO VERIFICATION RESULT"
+          echo "========================================"
+
+          echo "Lean:"
+          lean --version
+
+          echo ""
+          echo "Commit:"
+          git rev-parse --short HEAD
+
+          echo ""
+          echo "Status:"
+          echo "${{ job.status }}"
