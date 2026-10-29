@@ -1,0 +1,30 @@
+{
+  "meta": {
+    "total": 3,
+    "errors": 1,
+    "warnings": 2,
+    "debt": 0.9,
+    "score": 94.5,
+    "savings": 45.0
+  },
+  "files": [
+    {
+      "file": "app/src/main/AndroidManifest.xml",
+      "rule": "P12",
+      "severity": "warning",
+      "msg": "Icono y label definidos"
+    },
+    {
+      "file": "app/src/main/res/layout/activity_main.xml",
+      "rule": "P08",
+      "severity": "error",
+      "msg": "Texto hardcodeado"
+    },
+    {
+      "file": "app/build.gradle",
+      "rule": "P11",
+      "severity": "warning",
+      "msg": "versionCode no sem\u00e1ntico"
+    }
+  ]
+}

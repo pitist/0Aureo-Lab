@@ -1,0 +1,11 @@
+{
+  "name": "sistema-aurea",
+  "version": "1.0.0",
+  "scripts": {
+    "aurea:pack": "npx repomix@latest",
+    "aurea:deploy": "bash aurea.sh"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5"
+  }
+}

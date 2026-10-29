@@ -1,0 +1,187 @@
+name: AUREA.v
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  format:
+    name: AUREA.v / Format
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install Rust stable + rustfmt
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+  clippy:
+    name: AUREA.v / Clippy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install Rust stable + Clippy
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - name: Cache Rust
+        uses: Swatinem/rust-cache@v2
+
+      - name: Clippy / default
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: Clippy / padding_api
+        run: cargo clippy --all-targets --features padding_api -- -D warnings
+
+  test:
+    name: AUREA.v / Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust
+        uses: Swatinem/rust-cache@v2
+
+      - name: Tests / default
+        run: cargo test --all-targets
+
+      - name: Tests / padding_api
+        run: cargo test --all-targets --features padding_api
+
+  msrv:
+    name: AUREA.v / MSRV
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install cargo-msrv
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-msrv
+
+      - name: Verify minimum Rust version
+        run: cargo msrv verify
+
+  test-wasm:
+    name: AUREA.v / WASM
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - wasm32-wasip1
+          - wasm32-wasip2
+        feature:
+          - ""
+          - "--features padding_api"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install Rust + WASM target
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Cache Rust
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install Wasmtime
+        uses: taiki-e/install-action@v2
+        with:
+          tool: wasmtime
+
+      - name: Build WASM tests
+        run: >
+          cargo build
+          --tests
+          --target ${{ matrix.target }}
+          ${{ matrix.feature }}
+
+      - name: Run WASM tests
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          FILE="$(find "target/${{ matrix.target }}" \
+            -type f \
+            -name 'v_frame*.wasm' \
+            -print -quit)"
+
+          if [ -z "$FILE" ]; then
+            echo "ERROR: No WASM test binary found."
+            exit 1
+          fi
+
+          echo "Running: $FILE"
+          wasmtime run "$FILE"
+
+  code-coverage:
+    name: AUREA.v / Coverage
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install Rust + LLVM tools
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: llvm-tools-preview
+
+      - name: Cache Rust
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-llvm-cov
+
+      - name: Generate coverage
+        run: >
+          cargo llvm-cov
+          --all-targets
+          --features padding_api
+          --lcov
+          --output-path lcov.log
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v7
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: lcov.log
+          fail_ci_if_error: true

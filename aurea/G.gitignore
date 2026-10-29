@@ -1,0 +1,17 @@
+# Variables de entorno y credenciales (CRÍTICO)
+.env
+.env.local
+*.pem
+*.key
+
+# Archivos de entorno virtual de Python
+venv/
+.venv/
+env/
+__pycache__/
+*.pyc
+
+# Logs y reportes de tests
+.pytest_cache/
+.ruff_cache/
+*.log

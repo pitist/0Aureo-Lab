@@ -1,0 +1,3 @@
+- uses: actions/checkout@v4  # (si usas checkout, actualiza también)
+- uses: actions/setup-java@v4  # (para Java, ya lo hablamos)
+- uses: actions/upload-artifact@v4  # ¡esto es lo que falla ahora!

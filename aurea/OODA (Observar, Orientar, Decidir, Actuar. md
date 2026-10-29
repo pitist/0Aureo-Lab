@@ -1,0 +1,7 @@
+graph TD
+    A[1. Leer Repositorio & Errores] --> B[2. Enviar Contexto a la API de la IA]
+    B --> C[3. IA genera código o corrección]
+    C --> D[4. Aplicar cambios en los archivos]
+    D --> E[5. Ejecutar Tests / Validar]
+    E -- Falló --> A
+    E -- Éxito --> F[6. Git Commit & Push automático]

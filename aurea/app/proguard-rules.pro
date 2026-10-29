@@ -1,0 +1,2 @@
+-keep class com.aurea.app.** { *; }
+-keep interface com.aurea.app.** { *; }

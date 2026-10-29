@@ -1,0 +1,15 @@
+# Configuración de GitHub-MD-Book
+defaults:
+  workspace: .
+  cover: true
+  toc: true
+  encoding: utf-8
+  directory: output
+  basename: book
+  types:
+    - HTML
+    - PDF
+
+builds:
+  - workspace: .
+    basename: libro
